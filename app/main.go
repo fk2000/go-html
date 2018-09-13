@@ -1,17 +1,29 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
+	"text/template"
 )
 
-type String string
+type Page struct { // テンプレート展開用のデータ構造
+	Title string
+	Count int
+}
 
-func (s String) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprint(w, s)
+func viewHandler(w http.ResponseWriter, r *http.Request) {
+	page := Page{"Hello World.", 1}                                       // テンプレート用のデータ
+	tmpl, err := template.New("new").Parse("{{.Title}} {{.Count}} count") // テンプレート文字列
+	if err != nil {
+		panic(err)
+	}
+
+	err = tmpl.Execute(w, page) // テンプレートをジェネレート
+	if err != nil {
+		panic(err)
+	}
 }
 
 func main() {
-	http.Handle("/", String("Hello, World!"))
+	http.HandleFunc("/", viewHandler)
 	http.ListenAndServe(":8080", nil)
 }
