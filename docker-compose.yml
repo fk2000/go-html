@@ -1,0 +1,8 @@
+version: '2.1'
+
+services:
+  docker-golang:
+    image: docker-golang
+    build: .
+    ports:
+      - 8080:8080
