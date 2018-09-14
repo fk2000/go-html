@@ -1,29 +1,30 @@
 package main
 
 import (
+	"log"
 	"net/http"
+	"path/filepath"
+	"sync"
 	"text/template"
 )
 
-type Page struct { // テンプレート展開用のデータ構造
-	Title string
-	Count int
+type templateHandler struct {
+	once     sync.Once
+	filename string
+	templ    *template.Template
 }
 
-func viewHandler(w http.ResponseWriter, r *http.Request) {
-	page := Page{"Hello World.", 1}                                       // テンプレート用のデータ
-	tmpl, err := template.New("new").Parse("{{.Title}} {{.Count}} count") // テンプレート文字列
-	if err != nil {
-		panic(err)
-	}
-
-	err = tmpl.Execute(w, page) // テンプレートをジェネレート
-	if err != nil {
-		panic(err)
-	}
+func (t *templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	t.once.Do(func() {
+		t.templ = template.Must(template.ParseFiles(filepath.Join("template", t.filename)))
+	})
+	t.templ.Execute(w, nil)
 }
 
 func main() {
-	http.HandleFunc("/", viewHandler)
-	http.ListenAndServe(":8080", nil)
+	http.Handle("/", &templateHandler{filename: "layout.html"})
+
+	if err := http.ListenAndServe(":8080", nil); err != nil {
+		log.Fatal("ListenAndServe", err)
+	}
 }
